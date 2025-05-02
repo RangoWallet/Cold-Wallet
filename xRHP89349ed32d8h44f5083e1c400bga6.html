@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rango Cold Wallet - Crypto Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        .card-bg {
+            background-color: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            backdrop-filter: blur(10px);
+        }
+        
+        .input-field {
+            background-color: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #6366f1 0%, #3b82f6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: #60a5fa;
+        }
+        
+        .error-message {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.8);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            max-width: 95%;
+            width: 450px;
+            max-height: 95vh;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.8);
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .asset-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        
+        .dropdown-option {
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-option:hover {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
+        
+        .transaction-item {
+            transition: all 0.2s ease;
+            border-left: 6px solid #3b82f6;
+        }
+        
+        .transaction-item:hover {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
+        
+        .copy-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .asset-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+        }
+        
+        .asset-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    </style>
+</head>
+<body class="min-h-screen gradient-bg">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-500 p-2 rounded-lg">
+                    <i class="fas fa-wallet text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Rango Cold Wallet</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-slate-400 hover:text-white">
+                    <i class="fas fa-bell text-xl"></i>
+                </button>
+                <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center">
+                    <span class="text-white font-medium">MC</span>
+                </div>
+            </div>
+        </header>
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 mb-6">
+            <h2 class="text-xl font-bold text-white mb-1">Welcome back, Melissa 👋</h2>
+            <p class="text-blue-100">Your assets are securely stored in your cold wallet</p>
+        </div>
+        
+        <!-- Balance Card -->
+        <div class="card-bg rounded-2xl p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-300">Total Balance</h2>
+                <div class="text-sm text-slate-400">USD</div>
+            </div>
+            <div class="text-3xl font-bold text-white mb-1">$130,000.00</div>
+            <div class="text-sm text-green-500 flex items-center">
+                <i class="fas fa-caret-up mr-1"></i>
+                <span>2.5% (30d)</span>
+            </div>
+            
+            <div class="flex space-x-4 mt-6">
+                <button id="depositBtn" class="btn-primary flex-1 py-3 px-4 rounded-lg text-white font-medium">
+                    <i class="fas fa-arrow-down mr-2"></i> Deposit
+                </button>
+                <button id="withdrawBtn" class="btn-secondary flex-1 py-3 px-4 rounded-lg text-white font-medium">
+                    <i class="fas fa-arrow-up mr-2"></i> Withdraw
+                </button>
+            </div>
+        </div>
+        
+        <!-- Assets Section -->
+        <h3 class="text-lg font-semibold text-white mb-4">Your Assets</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- USDT ERC20 -->
+            <div class="asset-card rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                        <i class="fas fa-coins text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-white">USDT ERC20</h4>
+                        <p class="text-slate-400 text-sm">Tether</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h4 class="font-bold text-white">130,000.00 USDT</h4>
+                    <p class="text-slate-400 text-sm">$130,000.00</p>
+                </div>
+            </div>
+            
+            <!-- ETH -->
+            <div class="asset-card rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center">
+                        <i class="fab fa-ethereum text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-white">Ethereum</h4>
+                        <p class="text-slate-400 text-sm">ETH</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h4 class="font-bold text-white">0.00 ETH</h4>
+                    <p class="text-slate-400 text-sm">$0.00</p>
+                </div>
+            </div>
+            
+            <!-- BTC -->
+            <div class="asset-card rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center">
+                        <i class="fab fa-bitcoin text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-white">Bitcoin</h4>
+                        <p class="text-slate-400 text-sm">BTC</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h4 class="font-bold text-white">0.00 BTC</h4>
+                    <p class="text-slate-400 text-sm">$0.00</p>
+                </div>
+            </div>
+            
+            <!-- XRP -->
+            <div class="asset-card rounded-xl p-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                        <i class="fas fa-money-bill-wave text-white"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-white">Ripple</h4>
+                        <p class="text-slate-400 text-sm">XRP</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h4 class="font-bold text-white">0.00 XRP</h4>
+                    <p class="text-slate-400 text-sm">$0.00</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transaction History -->
+        <div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-slate-300">Recent Transactions</h2>
+                <button class="text-sm text-blue-400 hover:text-blue-300">View All</button>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- Transaction items -->
+                <div class="transaction-item card-bg rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3">
+                                <i class="fas fa-arrow-down text-green-500"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-white">Received ✅</div>
+                                <div class="text-xs text-slate-400">Jan 28, 2023</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium text-white">+30,000 USDT</div>
+                            <p class="text-green-400 text-xs">Completed</p>
+                            <div class="text-xs text-slate-400">ERC20</div>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm">From: 0x742d35Cc6634C0532925a3b844Bc454e4....</p>
+                </div>
+                
+                <div class="transaction-item card-bg rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3">
+                                <i class="fas fa-arrow-down text-green-500"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-white">Received ✅</div>
+                                <div class="text-xs text-slate-400">Jan 15, 2023</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium text-white">+50,000 USDT</div>
+                            <p class="text-green-400 text-xs">Completed</p>
+                            <div class="text-xs text-slate-400">ERC20</div>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm">From: 0x742d35Cc6634C0532925a3b844Bc454e4....</p>
+                </div>
+                
+                <div class="transaction-item card-bg rounded-xl p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mr-3">
+                                <i class="fas fa-arrow-down text-green-500"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-white">Received ✅</div>
+                                <div class="text-xs text-slate-400">Jan 5, 2023</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-medium text-white">+50,000 USDT</div>
+                            <p class="text-green-400 text-xs">Completed</p>
+                            <div class="text-xs text-slate-400">ERC20</div>
+                        </div>
+                    </div>
+                    <p class="text-slate-400 text-sm">From: 0x742d35Cc6634C0532925a3b844Bc454e4....</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="modal-overlay hidden">
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Withdraw Funds</h2>
+                <button id="closeWithdrawModal" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Asset</label>
+                    <div class="card-bg rounded-xl p-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="asset-logo bg-blue-500">
+                                <i class="fas fa-coins text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-white">Tether (USDT)</div>
+                                <div class="text-xs text-slate-400">ERC20</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-400">Available</div>
+                            <div class="font-medium text-white">130,000 USDT</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="withdrawAmount" class="block text-sm font-medium text-slate-300 mb-2">Amount</label>
+                    <div class="relative">
+                        <input 
+                            type="number" 
+                            id="withdrawAmount" 
+                            class="w-full px-4 py-3 rounded-lg input-field text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="0.00"
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span class="text-slate-400">USDT</span>
+                        </div>
+                    </div>
+                    <div id="gasFee" class="text-xs text-slate-400 mt-2 hidden">
+                        Estimated gas fee: <span id="gasFeeAmount">0</span> ETH
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="withdrawAddress" class="block text-sm font-medium text-slate-300 mb-2">Withdrawal Address</label>
+                    <input 
+                        type="text" 
+                        id="withdrawAddress" 
+                        class="w-full px-4 py-3 rounded-lg input-field text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter wallet address"
+                    >
+                </div>
+                
+                <div id="withdrawError" class="hidden bg-red-900/50 text-red-200 px-4 py-3 rounded-lg text-sm error-message"></div>
+                
+                <button id="submitWithdraw" class="w-full py-3 px-4 rounded-lg text-white font-medium btn-primary mt-4">
+                    <span id="withdrawBtnText">Submit Withdrawal</span>
+                    <span id="withdrawSpinner" class="hidden">
+                        <i class="fas fa-spinner fa-spin ml-2"></i>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deposit Modal -->
+    <div id="depositModal" class="modal-overlay hidden">
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Deposit Assets</h2>
+                <button id="closeDepositModal" class="text-slate-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Select Asset</label>
+                    <div class="relative">
+                        <button id="assetDropdownBtn" class="w-full px-4 py-3 rounded-lg input-field text-left text-white flex justify-between items-center">
+                            <span>Select asset</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <div id="assetDropdown" class="hidden absolute z-10 w-full mt-1 card-bg rounded-lg shadow-lg max-h-60 overflow-y-auto scrollbar-hide">
+                            <div class="dropdown-option p-3 flex items-center cursor-pointer" data-asset="btc">
+                                <div class="asset-logo bg-orange-500">
+                                    <i class="fab fa-bitcoin text-white"></i>
+                                </div>
+                                <span class="ml-2">Bitcoin (BTC)</span>
+                            </div>
+                            <div class="dropdown-option p-3 flex items-center cursor-pointer" data-asset="eth">
+                                <div class="asset-logo bg-purple-500">
+                                    <i class="fab fa-ethereum text-white"></i>
+                                </div>
+                                <span class="ml-2">Ethereum (ETH)</span>
+                            </div>
+                            <div class="dropdown-option p-3 flex items-center cursor-pointer" data-asset="usdt">
+                                <div class="asset-logo bg-blue-500">
+                                    <i class="fas fa-coins text-white"></i>
+                                </div>
+                                <span class="ml-2">Tether (USDT ERC20)</span>
+                            </div>
+                            <div class="dropdown-option p-3 flex items-center cursor-pointer" data-asset="trx">
+                                <div class="asset-logo bg-blue-400">
+                                    <i class="fas fa-coins text-white"></i>
+                                </div>
+                                <span class="ml-2">Tron (TRX)</span>
+                            </div>
+                            <div class="dropdown-option p-3 flex items-center cursor-pointer" data-asset="xrp">
+                                <div class="asset-logo bg-gray-500">
+                                    <i class="fas fa-coins text-white"></i>
+                                </div>
+                                <span class="ml-2">Ripple (XRP)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="depositAmount" class="block text-sm font-medium text-slate-300 mb-2">Amount</label>
+                    <div class="relative">
+                        <input 
+                            type="number" 
+                            id="depositAmount" 
+                            class="w-full px-4 py-3 rounded-lg input-field text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="0.00"
+                            disabled
+                        >
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span id="depositAssetSymbol" class="text-slate-400">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="depositAddressContainer" class="hidden">
+                    <div class="card-bg rounded-xl p-4 mt-4">
+                        <div class="text-sm text-slate-300 mb-2">Deposit Address</div>
+                        <div class="flex items-center justify-between">
+                            <div id="depositAddress" class="font-mono text-blue-400 truncate">-</div>
+                            <button id="copyDepositAddress" class="copy-btn p-2 rounded-lg bg-slate-800/50 text-blue-400">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-slate-400 mt-3">
+                        <p class="mb-1">• Copy the deposit address above</p>
+                        <p class="mb-1">• Send only <span id="depositAssetName">this asset</span> to this address</p>
+                        <p>• Deposits may take 5-30 minutes to reflect in your wallet</p>
+                    </div>
+                </div>
+                
+                <div id="depositError" class="hidden bg-red-900/50 text-red-200 px-4 py-3 rounded-lg text-sm error-message"></div>
+                
+                <button id="submitDeposit" class="w-full py-3 px-4 rounded-lg text-white font-medium btn-primary mt-4">
+                    <span id="depositBtnText">Generate Deposit Address</span>
+                    <span id="depositSpinner" class="hidden">
+                        <i class="fas fa-spinner fa-spin ml-2"></i>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Withdraw Modal
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            const withdrawModal = document.getElementById('withdrawModal');
+            const closeWithdrawModal = document.getElementById('closeWithdrawModal');
+            const submitWithdraw = document.getElementById('submitWithdraw');
+            const withdrawError = document.getElementById('withdrawError');
+            const withdrawAmount = document.getElementById('withdrawAmount');
+            const withdrawAddress = document.getElementById('withdrawAddress');
+            const gasFee = document.getElementById('gasFee');
+            const gasFeeAmount = document.getElementById('gasFeeAmount');
+            const withdrawBtnText = document.getElementById('withdrawBtnText');
+            const withdrawSpinner = document.getElementById('withdrawSpinner');
+            
+            // Deposit Modal
+            const depositBtn = document.getElementById('depositBtn');
+            const depositModal = document.getElementById('depositModal');
+            const closeDepositModal = document.getElementById('closeDepositModal');
+            const submitDeposit = document.getElementById('submitDeposit');
+            const depositError = document.getElementById('depositError');
+            const depositAmount = document.getElementById('depositAmount');
+            const assetDropdownBtn = document.getElementById('assetDropdownBtn');
+            const assetDropdown = document.getElementById('assetDropdown');
+            const depositAddressContainer = document.getElementById('depositAddressContainer');
+            const depositAddress = document.getElementById('depositAddress');
+            const copyDepositAddress = document.getElementById('copyDepositAddress');
+            const depositAssetSymbol = document.getElementById('depositAssetSymbol');
+            const depositAssetName = document.getElementById('depositAssetName');
+            const depositBtnText = document.getElementById('depositBtnText');
+            const depositSpinner = document.getElementById('depositSpinner');
+            
+            // Loading Overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            // Selected asset for deposit
+            let selectedAsset = null;
+            
+            // Open Withdraw Modal
+            withdrawBtn.addEventListener('click', function() {
+                withdrawModal.classList.remove('hidden');
+            });
+            
+            // Close Withdraw Modal
+            closeWithdrawModal.addEventListener('click', function() {
+                withdrawModal.classList.add('hidden');
+                withdrawError.classList.add('hidden');
+                withdrawAmount.value = '';
+                withdrawAddress.value = '';
+                gasFee.classList.add('hidden');
+            });
+            
+            // Calculate gas fee when amount changes
+            withdrawAmount.addEventListener('input', function() {
+                const amount = parseFloat(this.value);
+                if (!isNaN(amount) && amount > 0) {
+                    const fee = amount * 0.000031; // 0.0031% fee
+                    gasFeeAmount.textContent = fee.toFixed(6);
+                    gasFee.classList.remove('hidden');
+                } else {
+                    gasFee.classList.add('hidden');
+                }
+            });
+            
+            // Submit Withdraw
+            submitWithdraw.addEventListener('click', function() {
+                const amount = withdrawAmount.value;
+                const address = withdrawAddress.value;
+                
+                // Validate inputs
+                if (!amount || !address) {
+                    withdrawError.textContent = 'Please fill in all fields';
+                    withdrawError.classList.remove('hidden');
+                    return;
+                }
+                
+                // Show loading
+                withdrawBtnText.classList.add('hidden');
+                withdrawSpinner.classList.remove('hidden');
+                submitWithdraw.disabled = true;
+                
+                // Simulate processing
+                setTimeout(function() {
+                    // Show error (insufficient ETH)
+                    withdrawError.textContent = 'Insufficient ETH to cover gas fees for withdrawal';
+                    withdrawError.classList.remove('hidden');
+                    
+                    // Reset button
+                    withdrawBtnText.classList.remove('hidden');
+                    withdrawSpinner.classList.add('hidden');
+                    submitWithdraw.disabled = false;
+                }, 1500);
+            });
+            
+            // Open Deposit Modal
+            depositBtn.addEventListener('click', function() {
+                depositModal.classList.remove('hidden');
+            });
+            
+            // Close Deposit Modal
+            closeDepositModal.addEventListener('click', function() {
+                depositModal.classList.add('hidden');
+                depositError.classList.add('hidden');
+                depositAmount.value = '';
+                depositAddressContainer.classList.add('hidden');
+                selectedAsset = null;
+                assetDropdownBtn.innerHTML = '<span>Select asset</span><i class="fas fa-chevron-down"></i>';
+                depositAmount.disabled = true;
+            });
+            
+            // Asset Dropdown
+            assetDropdownBtn.addEventListener('click', function() {
+                assetDropdown.classList.toggle('hidden');
+            });
+            
+            // Select Asset
+            const assetOptions = document.querySelectorAll('.dropdown-option');
+            assetOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    selectedAsset = this.getAttribute('data-asset');
+                    const assetName = this.textContent.trim();
+                    
+                    // Update UI
+                    assetDropdownBtn.innerHTML = `<span>${assetName}</span><i class="fas fa-chevron-down"></i>`;
+                    assetDropdown.classList.add('hidden');
+                    depositAmount.disabled = false;
+                    
+                    // Set asset symbol
+                    let symbol = '';
+                    let name = '';
+                    switch(selectedAsset) {
+                        case 'btc':
+                            symbol = 'BTC';
+                            name = 'Bitcoin (BTC)';
+                            break;
+                        case 'eth':
+                            symbol = 'ETH';
+                            name = 'Ethereum (ETH)';
+                            break;
+                        case 'usdt':
+                            symbol = 'USDT';
+                            name = 'Tether (USDT ERC20)';
+                            break;
+                        case 'trx':
+                            symbol = 'TRX';
+                            name = 'Tron (TRX)';
+                            break;
+                        case 'xrp':
+                            symbol = 'XRP';
+                            name = 'Ripple (XRP)';
+                            break;
+                    }
+                    depositAssetSymbol.textContent = symbol;
+                    depositAssetName.textContent = name;
+                    
+                    // Reset amount and address
+                    depositAmount.value = '';
+                    depositAddressContainer.classList.add('hidden');
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!assetDropdownBtn.contains(e.target) && !assetDropdown.contains(e.target)) {
+                    assetDropdown.classList.add('hidden');
+                }
+            });
+            
+            // Submit Deposit
+            submitDeposit.addEventListener('click', function() {
+                if (!selectedAsset) {
+                    depositError.textContent = 'Please select an asset';
+                    depositError.classList.remove('hidden');
+                    return;
+                }
+                
+                const amount = depositAmount.value;
+                if (!amount) {
+                    depositError.textContent = 'Please enter an amount';
+                    depositError.classList.remove('hidden');
+                    return;
+                }
+                
+                // Show loading
+                loadingOverlay.classList.remove('hidden');
+                depositBtnText.classList.add('hidden');
+                depositSpinner.classList.remove('hidden');
+                submitDeposit.disabled = true;
+                
+                // Simulate processing
+                setTimeout(function() {
+                    // Generate deposit address based on selected asset
+                    let address = '';
+                    switch(selectedAsset) {
+                        case 'btc':
+                            address = 'bc1qhk9rruu8l2ksrhj0h54qz88p6wy4n45ycxrefr';
+                            break;
+                        case 'eth':
+                            address = '0xEe1Fbb0f469C9470353c656Fff1fB8B241aeE2cD';
+                            break;
+                        case 'usdt':
+                            address = '0xEe1Fbb0f469C9470353c656Fff1fB8B241aeE2cD';
+                            break;
+                        case 'trx':
+                            address = 'TKVoxx6WpE3wHT2dBUsFwRmE8bhjnSSJDk';
+                            break;
+                        case 'xrp':
+                            address = 'rL8z8U79kjyv8TfuoWiqipgQ4aKh3na6md';
+                            break;
+                    }
+                    
+                    // Update UI
+                    depositAddress.textContent = address;
+                    depositAddressContainer.classList.remove('hidden');
+                    depositError.classList.add('hidden');
+                    
+                    // Reset button
+                    depositBtnText.textContent = 'Refresh';
+                    depositBtnText.classList.remove('hidden');
+                    depositSpinner.classList.add('hidden');
+                    submitDeposit.disabled = false;
+                    
+                    // Hide loading
+                    loadingOverlay.classList.add('hidden');
+                }, 2000);
+            });
+            
+            // Copy Deposit Address
+            copyDepositAddress.addEventListener('click', function() {
+                const textToCopy = depositAddress.textContent;
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    // Show copied feedback
+                    const originalIcon = copyDepositAddress.innerHTML;
+                    copyDepositAddress.innerHTML = '<i class="fas fa-check"></i>';
+                    
+                    setTimeout(function() {
+                        copyDepositAddress.innerHTML = originalIcon;
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
